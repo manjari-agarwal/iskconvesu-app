@@ -1,25 +1,21 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, TextInput, Image, StyleSheet } from "react-native";
 import colors from "../utils/colors";
 
-const PhoneNumberInput = () => {
-  const [phone, setPhone] = useState("");
-  const [error, setError] = useState("");
+type Props = {
+  value: string;
+  onChangeText: (text: string) => void;
+};
 
-  const handlePhoneChange = (text: string) => {
-    const cleaned = text.replace(/[^0-9]/g, "");
-    setPhone(cleaned);
-
-    if (cleaned.length === 0) {
-      setError("");
-    } else if (cleaned.length < 10) {
-      setError("Phone number must be 10 digits");
-    } else if (cleaned.length > 10) {
-      setError("Phone number cannot exceed 10 digits");
-    } else {
-      setError("");
-    }
-  };
+const PhoneNumberInput: React.FC<Props> = ({ value, onChangeText }) => {
+  const error =
+    value.length === 0
+      ? ""
+      : value.length < 10
+      ? "Phone number must be 10 digits"
+      : value.length > 10
+      ? "Phone number cannot exceed 10 digits"
+      : "";
 
   return (
     <View style={styles.wrapper}>
@@ -35,11 +31,14 @@ const PhoneNumberInput = () => {
           placeholderTextColor="#999"
           keyboardType="number-pad"
           maxLength={10}
-          value={phone}
-          onChangeText={handlePhoneChange}
+          value={value}
+          onChangeText={(text) => {
+            const cleaned = text.replace(/[^0-9]/g, "");
+            onChangeText(cleaned);
+          }}
         />
       </View>
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   );
 };
@@ -49,8 +48,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   container: {
-    width: "90%",
-    height: 46,
+    height: 56,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.white,
