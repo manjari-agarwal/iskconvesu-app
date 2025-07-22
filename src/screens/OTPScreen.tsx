@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,27 +7,63 @@ import {
   StyleSheet,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import OTPTextView from 'react-native-otp-textinput';
 import colors from '../utils/colors';
 import CustomeHeader from '../components/CustomeHeader';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '../store/store';
+import { getMetadataThunk } from '../store/redux/slices/getMetadataSlice';
 
 const { width } = Dimensions.get('window');
 
-const OTPScreen: React.FC<{ navigation: any, route: any }> = ({ route, navigation }) => {
+const OTPScreen: React.FC<{ navigation: any; route: any }> = ({
+  route,
+  navigation,
+}) => {
   const mobileNumber = route?.params?.mobileNumber || '';
   const otpInputRef = useRef<OTPTextView>(null);
 
   const [otp, setOtp] = useState('');
   const [isOtpComplete, setIsOtpComplete] = useState(false);
 
+  const dispatch = useDispatch<AppDispatch>();
+  const { loading, data, error } = useSelector(
+    (state: RootState) => state.metadata
+  );
+
+  useEffect(() => {
+    dispatch(getMetadataThunk());
+  }, [dispatch]);
+
+  let apiData: any = {};
+  let blobBaseUrl: string | null = null;
+  let blobSAS: string | null = null;
+
+  if (Array.isArray(data)) {
+    const otpScreen = data.find((item: any) => item.screen === 'otpScreen');
+    const blobData = data.find((item: any) => item.screen === 'All');
+
+    if (otpScreen?.data) {
+      apiData = otpScreen.data;
+    }
+    if (blobData?.data) {
+      blobBaseUrl = blobData.data.blobBaseUrl;
+      blobSAS = blobData.data.blobSAS;
+    }
+  }
+
+  const decodedSAS = blobSAS ? decodeBase64(blobSAS) : '';
+
+  const imageUrl =
+    blobBaseUrl && apiData.backgroundImage
+      ? `${blobBaseUrl}${apiData.backgroundImage}${decodedSAS}`
+      : undefined;
+
   const handleOtpChange = (text: string) => {
     setOtp(text);
-    if (text.length === 6) {
-      setIsOtpComplete(true);
-    } else {
-      setIsOtpComplete(false);
-    }
+    setIsOtpComplete(text.length === 6);
   };
 
   const handleLogin = () => {
@@ -35,18 +71,33 @@ const OTPScreen: React.FC<{ navigation: any, route: any }> = ({ route, navigatio
       Alert.alert('Error', 'Please enter a valid 6-digit OTP');
       return;
     }
-    
-    navigation.navigate('Home', { mobileNumber, otp })
 
+    navigation.navigate('PersonalInfo');
     console.log('OTP entered:', otp);
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color={colors.lightOrange} />
+      </View>
+    );
+  }
+
+  if (error) {
+    console.warn('Metadata fetch error:', error);
+  }
 
   return (
     <View style={styles.container}>
       <CustomeHeader title="Enter OTP Below" />
 
       <ImageBackground
-        source={require('../assets/bg.png')}
+        source={
+          imageUrl
+            ? { uri: imageUrl }
+            : require('../assets/bg.png')
+        }
         style={styles.bgImage}
         imageStyle={{ opacity: 0.9 }}
       >
@@ -84,10 +135,12 @@ const OTPScreen: React.FC<{ navigation: any, route: any }> = ({ route, navigatio
             <Text
               style={[
                 styles.buttonText,
-                isOtpComplete ? { color: colors.white } : { color: colors.textBlack },
+                isOtpComplete
+                  ? { color: colors.white }
+                  : { color: colors.textBlack },
               ]}
             >
-              Login
+              {apiData.buttonText || 'Login'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -98,10 +151,28 @@ const OTPScreen: React.FC<{ navigation: any, route: any }> = ({ route, navigatio
 
 export default OTPScreen;
 
+const decodeBase64 = (encoded: string) => {
+  try {
+    return decodeURIComponent(
+      atob(encoded)
+        .split('')
+        .map(c => '%' + c.charCodeAt(0)?.toString(16)?.padStart(2, '0'))
+        .join('')
+    );
+  } catch {
+    return '';
+  }
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.textBlack,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   bgImage: {
     flex: 1,
@@ -121,15 +192,14 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: '400',
     marginTop: 10,
-    // marginBottom: 20,
   },
   link: {
     color: colors.lightOrange,
   },
   otpBox: {
     borderBottomWidth: 2,
-    borderColor: '#fff',
-    color: '#fff',
+    borderColor: colors.white,
+    color: colors.white,
     fontSize: 18,
     width: 40,
   },
@@ -161,158 +231,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-// import React, { useRef } from 'react';
-// import {
-//   View,
-//   Text,
-//   Image,
-//   StyleSheet,
-//   TouchableOpacity,
-//   Dimensions,
-//   ImageBackground,
-// } from 'react-native';
-// import OTPTextInput from 'react-native-otp-textinput';
-// import colors from '../utils/colors';
-// import CustomeHeader from '../components/CustomeHeader';
-
-// const { width } = Dimensions.get('window');
-
-// const OTPScreen: React.FC<{ route: any }> = ({ route }) => {
-//   const mobileNumber = route?.params?.mobileNumber || '';
-//   const otpInput = useRef<OTPTextInput>(null);
-
-//   const handleLogin = () => {
-//     const otp = otpInput.current?.getOTP();
-//     console.log('OTP entered:', otp);
-//   };
-
-//   return (
-//     <View style={styles.container}>
-
-//       <CustomeHeader title="Enter OTP Below" />
-
-//       <ImageBackground
-//         source={require('../assets/bg.png')}
-//         style={styles.bgImage}
-//         imageStyle={{ opacity: 0.9 }}
-//       >
-
-//         <View style={styles.formContainer}>
-//           <Text style={styles.title}>Enter OTP</Text>
-//           <Text style={styles.subtitle}>
-//             Please sent by SMS on {mobileNumber}{' '}
-//             <Text style={styles.link}>Change Number</Text>
-//           </Text>
-
-//           <OTPTextInput
-//             ref={otpInput}
-//             inputCount={6}
-//             tintColor={colors.white}
-//             offTintColor="#ccc"
-//             textInputStyle={styles.otpBox}
-//             handleTextChange={(text) => console.log('Current OTP:', text)}
-//           />
-
-//           <Text style={styles.resend}>
-//             OTP not received? <Text style={styles.link}>Resend OTP</Text>
-//           </Text>
-//         </View>
-
-//         <View style={styles.bottomButtonWrapper}>
-//           <TouchableOpacity style={styles.button} onPress={handleLogin}>
-//             <Text style={styles.buttonText}>Login</Text>
-//           </TouchableOpacity>
-//         </View>
-//       </ImageBackground>
-//     </View>
-//   );
-// };
-
-// export default OTPScreen;
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#000',
-//   },
-//   header: {
-//     backgroundColor: colors.lightOrange,
-//     height: 100,
-//     justifyContent: 'flex-end',
-//     alignItems: 'center',
-//     paddingBottom: 10,
-//   },
-//   headerText: {
-//     color: '#fff',
-//     fontSize: 20,
-//     fontWeight: '600',
-//   },
-//   bgImage: {
-//     flex: 1,
-//     justifyContent: 'flex-start',
-//     paddingHorizontal: 20,
-//   },
-//   logoContainer: {
-//     marginTop: 20,
-//     marginBottom: 20,
-//     width: 60,
-//     height: 60,
-//     borderRadius: 30,
-//     backgroundColor: colors.white,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     overflow: 'hidden',
-//   },
-//   logo: {
-//     width: 50,
-//     height: 50,
-//     resizeMode: 'contain',
-//   },
-//   formContainer: {
-//     marginTop: 50,
-//   },
-//   title: {
-//     fontSize: 20,
-//     fontWeight: 'bold',
-//     color: '#fff',
-//   },
-//   subtitle: {
-//     fontSize: 12,
-//     color: '#ccc',
-//     marginBottom: 20,
-//   },
-//   link: {
-//     color: colors.lightOrange,
-//   },
-//   otpBox: {
-//     borderBottomWidth: 2,
-//     borderColor: '#fff',
-//     color: '#fff',
-//     fontSize: 18,
-//     width: 40,
-//   },
-//   resend: {
-//     fontSize: 12,
-//     color: '#ccc',
-//     marginTop: 10,
-//   },
-//   bottomButtonWrapper: {
-//     position: 'absolute',
-//     bottom: 90,
-//     left: 20,
-//     right: 20,
-//   },
-//   button: {
-//     borderRadius: 8,
-//     paddingVertical: 14,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     backgroundColor: colors.white,
-//   },
-//   buttonText: {
-//     fontWeight: 'bold',
-//     fontSize: 16,
-//     color: colors.textBlack,
-//   },
-// });

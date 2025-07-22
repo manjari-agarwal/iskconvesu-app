@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   headerText: {
-    color: '#fff',
+    color: colors.white,
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 25,

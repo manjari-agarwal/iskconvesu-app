@@ -6,6 +6,7 @@ import HomeScreen from '../screens/HomeScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import OTPScreen from '../screens/OTPScreen';
+import PersonalInfoScreen from '../screens/PersonalInfoScreen';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -24,6 +25,7 @@ const AppNavigator = () => {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="OTP" component={OTPScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
