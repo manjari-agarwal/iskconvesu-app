@@ -34,8 +34,11 @@ const OTPScreen: React.FC<{ navigation: any; route: any }> = ({
   );
 
   useEffect(() => {
-    dispatch(getMetadataThunk());
-  }, [dispatch]);
+    dispatch(getMetadataThunk())
+      .unwrap()
+      .then((res) => console.log("Success:", res))
+      .catch((err) => console.error("Error:", err));
+  }, []);
 
   let apiData: any = {};
   let blobBaseUrl: string | null = null;

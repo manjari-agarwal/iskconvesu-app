@@ -33,9 +33,12 @@ const LoginScreen: React.FC = ({ navigation }: any) => {
     description: '',
   });
 
-  useEffect(() => {
-    dispatch(getMetadataThunk());
-  }, [dispatch]);
+ useEffect(() => {
+     dispatch(getMetadataThunk())
+       .unwrap()
+       .then((res) => console.log("Success:", res))
+       .catch((err) => console.error("Error:", err));
+   }, []);
 
   let screenData: any = {};
   let blobBaseUrl: string | null = null;

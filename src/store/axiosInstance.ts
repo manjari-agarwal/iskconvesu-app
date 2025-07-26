@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_API_URL = 'http://iskcon-vesu-cms.azurewebsites.net/api';
+const BASE_API_URL = 'https://iskcon-vesu-cms.azurewebsites.net/api';
 
 export const axiosInstance = axios.create({
     baseURL: BASE_API_URL,
@@ -32,7 +32,7 @@ axiosInstance.interceptors.response.use(
         return response;
     },
     (error) => {
-        console.error('[Response Error]', error);
+        console?.error('[Response Error]', error);
         return Promise?.reject(error);
     }
 );

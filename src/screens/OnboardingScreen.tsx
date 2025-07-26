@@ -27,14 +27,18 @@ const staticScreenData = {
 const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { loading, data, error } = useSelector(
-    (state: RootState) => state.metadata
+    (state: RootState) => state?.metadata
   );
 
   const isAndroid = Platform.OS === 'android';
 
   useEffect(() => {
-    dispatch(getMetadataThunk());
-  }, [dispatch]);
+    dispatch(getMetadataThunk())
+      .unwrap()
+      .then((res) => console.log("Success:", res))
+      .catch((err) => console.error("Error:", err));
+  }, []);
+
 
   let screenData: any = null;
   let blobBaseUrl: string | null = null;
@@ -53,7 +57,6 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   }
 
-  // const finalScreenData = screenData || staticScreenData;
   const finalScreenData = screenData || staticScreenData;
 
 
@@ -90,21 +93,21 @@ const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       )}
 
       <View style={styles.cardWrapper}>
-        {isAndroid ? (
-          <View style={[styles.blurFallback, styles.blurView]}>
-            <CardContent navigation={navigation} screenData={finalScreenData} />
-          </View>
-        ) : (
-          <BlurView
-            style={styles.blurView}
-            blurType="light"
-            blurAmount={25}
-            reducedTransparencyFallbackColor="white"
-          >
-            <CardContent navigation={navigation} screenData={finalScreenData} />
-          </BlurView>
-        )}
+        <View style={styles.blurContainer}>
+          {isAndroid ? (
+            <View style={[styles.blurFallback, StyleSheet.absoluteFill]} />
+          ) : (
+            <BlurView
+              style={StyleSheet.absoluteFill}
+              blurType="light"
+              blurAmount={15}
+              reducedTransparencyFallbackColor="white"
+            />
+          )}
+          <CardContent navigation={navigation} screenData={finalScreenData} />
+        </View>
       </View>
+
     </View>
   );
 };
@@ -169,24 +172,29 @@ const styles = StyleSheet.create({
     width: '100%',
     height: height * 0.45,
     overflow: 'hidden',
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
+    borderTopLeftRadius: 80,
+    borderTopRightRadius: 80,
+    backgroundColor: 'transparent',
   },
-  blurView: {
+
+  blurContainer: {
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 80,
-    borderTopLeftRadius: 70,
-    borderTopRightRadius: 70,
     alignItems: 'center',
     justifyContent: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)', 
   },
+
   blurFallback: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderTopLeftRadius: 80,
+    borderTopRightRadius: 80,
   },
+
   title: {
     fontFamily: 'Outfit-ExtraBold',
-    fontSize: 28,
+    fontSize: 32,
     textAlign: 'center',
     color: colors.textBlack,
     opacity: 0.9,
@@ -194,9 +202,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   subtitle: {
-    marginTop: 20,
-    fontSize: 14,
-    color: '#333',
+    marginTop: 30,
+    fontSize: 15,
+    color: colors.textBlack,
     textAlign: 'center',
     paddingHorizontal: 10,
   },
